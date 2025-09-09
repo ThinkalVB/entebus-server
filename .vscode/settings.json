@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
         "Entebus",
-        "Nixbug"
+        "geoalchemy",
+        "Nixbug",
+        "sessionmaker"
     ]
 }

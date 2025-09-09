@@ -72,8 +72,6 @@ MAX_TOKEN_VALIDITY = 7 * 24 * 60 * 60  # Token validity (in seconds, 7 days)
 # ---------------------------------------------------------------------------
 MAX_LANDMARK_AREA = 5 * 1000 * 1000  # 5 km² in m²
 MIN_LANDMARK_AREA = 2  # 2 m²
-EPSG_4326 = 4326  # WGS 84
-EPSG_3857 = 3857  # Web Mercator
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +85,7 @@ MAX_ROUTE_DISTANCE = 10000 * 1000  # Max route length in meters
 # Service/duty constraints
 # ---------------------------------------------------------------------------
 SERVICE_START_LEAD_TIME_MINUTES = 60  # Minimum buffer before a service starts
-SERVICE_CREATION_LEAD_TIME_DAYS = 30  # Minimum buffer before a service can be created
+SERVICE_CREATION_LEAD_TIME_DAYS = 1  # Minimum buffer before a service can be created
 MAX_DUTIES_PER_SERVICE = 50  # Maximum number of duties allowed per service
 
 
