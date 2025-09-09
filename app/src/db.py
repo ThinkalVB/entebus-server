@@ -134,7 +134,7 @@ class Landmark(ORMbase):
     name = Column(String(32), nullable=False, index=True)
     alias_names = Column(ARRAY(String(32)), nullable=True)
     boundary = Column(Geometry(geometry_type="POLYGON", srid=4326), nullable=False)
-    type = Column(Integer, nullable=False, default=LandmarkType.LOCAL)
+    type = Column(Integer, nullable=False, default=LandmarkType.LOCAL, index=True)
     created_on = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -505,7 +505,7 @@ class Route(ORMbase):
         index=True,
     )
     name = Column(String(256), nullable=False)
-    start_time = Column(Time(timezone=True), nullable=False)
+    attributes = Column(JSONB, nullable=False)
     status = Column(Integer, nullable=False, default=RouteStatus.INVALID)
     created_on = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -528,7 +528,9 @@ class LandmarkInRoute(ORMbase):
     route_id = Column(
         Integer, ForeignKey(Route.id, ondelete="CASCADE"), nullable=False, index=True
     )
-    landmark_id = Column(Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"))
+    landmark_id = Column(
+        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+    )
     distance_from_start = Column(Integer, nullable=False)
     arrival_delta = Column(Integer, nullable=False)
     departure_delta = Column(Integer, nullable=False)
@@ -567,8 +569,38 @@ class Bus(ORMbase):
     __table_args__ = (UniqueConstraint(registration_number, company_id),)
 
 
+# ---------------------------------------------------------------------------
+# Service Related Models
+# ---------------------------------------------------------------------------
 class Schedule(ORMbase):
     __tablename__ = "schedule"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False, index=True)
+    company_id = Column(
+        Integer,
+        ForeignKey(Company.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    ticketing_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    start_time = Column(Time(timezone=True), nullable=False)
+    bus_id = Column(Integer, ForeignKey(Bus.id, ondelete="SET NULL"))
+    route_id = Column(Integer, ForeignKey(Route.id, ondelete="SET NULL"))
+    fare_id = Column(Integer, ForeignKey(LocalFare.id, ondelete="SET NULL"))
+    trigger_on = Column(ARRAY(Integer))
+    trigger_mode = Column(Integer, nullable=False, default=TriggeringMode.AUTO)
+    trigger_at = Column(Time(timezone=True), nullable=False)
+    trigger_from = Column(DateTime(timezone=True))
+    trigger_till = Column(DateTime(timezone=True))
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Service(ORMbase):
+    __tablename__ = "service"
 
     id = Column(Integer, primary_key=True)
     company_id = Column(
@@ -577,17 +609,20 @@ class Schedule(ORMbase):
         nullable=False,
         index=True,
     )
-    name = Column(String(32), nullable=False, index=True)
-    description = Column(TEXT)
-    route_id = Column(Integer, ForeignKey(Route.id, ondelete="SET NULL"))
-    fare_id = Column(Integer, ForeignKey(LocalFare.id, ondelete="SET NULL"))
-    bus_id = Column(Integer, ForeignKey(Bus.id, ondelete="SET NULL"))
-    frequency = Column(ARRAY(Integer))
-    ticketing_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
-    triggering_mode = Column(Integer, nullable=False, default=TriggeringMode.AUTO)
-    next_trigger_on = Column(DateTime(timezone=True))
-    trigger_till = Column(DateTime(timezone=True))
+    name = Column(String(128), nullable=False)
+    route = Column(JSONB, ForeignKey(Route.id, ondelete="RESTRICT"))
+    fare = Column(JSONB, ForeignKey(LocalFare.id, ondelete="RESTRICT"))
+    bus_id = Column(Integer, ForeignKey(Bus.id, ondelete="RESTRICT"))
+    ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
+    status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
+    starting_at = Column(DateTime(timezone=True), nullable=False)
+    ending_at = Column(DateTime(timezone=True), nullable=False)
+    private_key = Column(TEXT, nullable=False)
+    public_key = Column(TEXT, nullable=False)
+    remark = Column(TEXT)
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
-    created_on = Column(DateTime(timezone=True), nullable=False, default=func.now())
-
-    __table_args__ = (UniqueConstraint(company_id, name),)

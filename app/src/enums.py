@@ -49,11 +49,12 @@ class PlatformType(IntEnum):
 class LandmarkType(IntEnum):
     """Administrative level or importance of a landmark"""
 
-    LOCAL = 1
-    VILLAGE = 2
-    DISTRICT = 3
-    STATE = 4
-    NATIONAL = 5
+    NOT_IN_USE = 1
+    LOCAL = 2
+    VILLAGE = 3
+    DISTRICT = 4
+    STATE = 5
+    NATIONAL = 6
 
 
 class BusinessStatus(IntEnum):
@@ -135,7 +136,6 @@ class Day(IntEnum):
 class TriggeringMode(IntEnum):
     """Service triggering configuration."""
 
-    DISABLED = 1
     AUTO = 2
     MANUAL = 3
 
