@@ -340,6 +340,24 @@ class Business(ORMbase):
     )
 
 
+class BusinessImage(ORMbase):
+    __tablename__ = "business_image"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class BusinessWallet(ORMbase):
     __tablename__ = "business_wallet"
 
@@ -469,6 +487,24 @@ class VendorToken(ORMbase):
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
 
 
+class VendorImage(ORMbase):
+    __tablename__ = "vendor_image"
+
+    id = Column(Integer, primary_key=True)
+    vendor_id = Column(
+        Integer,
+        ForeignKey(Vendor.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Company Models
 # ---------------------------------------------------------------------------
@@ -491,6 +527,24 @@ class Company(ORMbase):
 
     __table_args__ = (
         Index("ix_company_location_gist", location, postgresql_using="gist"),
+    )
+
+
+class CompanyImage(ORMbase):
+    __tablename__ = "company_image"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey(Company.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
 
@@ -621,6 +675,24 @@ class OperatorToken(ORMbase):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class OperatorImage(ORMbase):
+    __tablename__ = "operator_image"
+
+    id = Column(Integer, primary_key=True)
+    operator_id = Column(
+        Integer,
+        ForeignKey(Operator.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class LocalFare(ORMbase):
