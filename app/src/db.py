@@ -13,9 +13,9 @@ All ORM models should inherit from `ORMbase`.
 from secrets import token_hex
 from geoalchemy2 import Geometry
 from sqlalchemy import (
-    Date,
     ARRAY,
     TEXT,
+    BigInteger,
     Boolean,
     Column,
     DateTime,
@@ -51,7 +51,6 @@ from app.src.enums import (
     BusinessType,
     CompanyStatus,
     CompanyType,
-    FareScope,
     BusStatus,
     TicketingMode,
     TriggeringMode,
@@ -131,6 +130,7 @@ class Landmark(ORMbase):
     __tablename__ = "landmark"
 
     id = Column(Integer, primary_key=True)
+    is_use = Column(Boolean, nullable=False, default=True)
     name = Column(String(32), nullable=False, index=True)
     alias_names = Column(ARRAY(String(32)), nullable=True)
     boundary = Column(Geometry(geometry_type="POLYGON", srid=4326), nullable=False)
@@ -311,6 +311,162 @@ class ExecutiveImage(ORMbase):
     created_on = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+# ---------------------------------------------------------------------------
+# Business Models
+# ---------------------------------------------------------------------------
+class Business(ORMbase):
+
+    __tablename__ = "business"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32), nullable=False, unique=True)
+    status = Column(Integer, nullable=False, default=BusinessStatus.ACTIVE)
+    type = Column(Integer, nullable=False, default=BusinessType.OTHER)
+
+    address = Column(TEXT, nullable=False)
+    contact_person = Column(TEXT, nullable=False)
+    phone_number = Column(TEXT, nullable=False)
+    email_id = Column(TEXT, nullable=False)
+    location = Column(Geometry(geometry_type="POINT", srid=4326), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_business_location_gist", location, postgresql_using="gist"),
+    )
+
+
+class BusinessWallet(ORMbase):
+    __tablename__ = "business_wallet"
+
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(
+        Integer, ForeignKey(Wallet.id, ondelete="CASCADE"), nullable=False
+    )
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Vendor(ORMbase):
+    __tablename__ = "vendor"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    username = Column(String(32), nullable=False)
+    password = Column(TEXT, nullable=False)
+    gender = Column(Integer, nullable=False, default=GenderType.OTHER)
+    full_name = Column(TEXT)
+    status = Column(Integer, nullable=False, default=AccountStatus.ACTIVE)
+    phone_number = Column(TEXT)
+    email_id = Column(TEXT)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint(username, business_id),)
+
+
+class VendorRole(ORMbase):
+    __tablename__ = "vendor_role"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name = Column(String(32), nullable=False)
+    permissions = Column(ARRAY(String), nullable=False, default=list)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint(name, business_id),
+        Index("ix_vendor_role_permissions_gin", permissions, postgresql_using="gin"),
+    )
+
+
+class VendorRoleMap(ORMbase):
+    __tablename__ = "Vendor_role_map"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role_id = Column(
+        Integer,
+        ForeignKey(VendorRole.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    vendor_id = Column(
+        Integer,
+        ForeignKey(Vendor.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint(business_id, role_id, vendor_id),)
+
+
+class VendorToken(ORMbase):
+    __tablename__ = "vendor_token"
+
+    id = Column(Integer, primary_key=True)
+    business_id = Column(
+        Integer,
+        ForeignKey(Business.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    vendor_id = Column(
+        Integer,
+        ForeignKey(Vendor.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    access_token = Column(
+        String(64),
+        nullable=False,
+        unique=True,
+        default=lambda: token_hex(32),
+    )
+    expires_in = Column(Integer, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    platform_type = Column(Integer, nullable=False, default=PlatformType.OTHER)
+    client_details = Column(TEXT)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
 
 
 # ---------------------------------------------------------------------------
@@ -641,7 +797,7 @@ class ServiceTrace(ORMbase):
         unique=True,
     )
     landmark_id = Column(
-        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey(Landmark.id, ondelete="CASCADE"), nullable=False
     )
     location = Column(Geometry(geometry_type="POINT", srid=4326))
     accuracy = Column(Numeric(10, 2))
@@ -657,17 +813,17 @@ class Duty(ORMbase):
     id = Column(Integer, primary_key=True)
     company_id = Column(
         Integer,
-        ForeignKey("company.id", ondelete="CASCADE"),
+        ForeignKey(Company.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     operator_id = Column(
         Integer,
-        ForeignKey("operator.id", ondelete="SET NULL"),
+        ForeignKey(Operator.id, ondelete="SET NULL"),
     )
     service_id = Column(
         Integer,
-        ForeignKey("service.id", ondelete="CASCADE"),
+        ForeignKey(Service.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -685,32 +841,67 @@ class Duty(ORMbase):
 class PaperTicket(ORMbase):
     __tablename__ = "paper_ticket"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     company_id = Column(
         Integer,
-        ForeignKey("company.id", ondelete="CASCADE"),
+        ForeignKey(Company.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     service_id = Column(
         Integer,
-        ForeignKey("service.id", ondelete="CASCADE"),
+        ForeignKey(Service.id, ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     duty_id = Column(
-        Integer, ForeignKey("duty.id", ondelete="RESTRICT"), nullable=False, index=True
+        Integer, ForeignKey(Duty.id, ondelete="RESTRICT"), nullable=False, index=True
     )
     sequence_id = Column(Integer, nullable=False)
     ticket_types = Column(JSONB, nullable=False)
-    pickup_point = Column(Integer, ForeignKey("landmark.id"))
-    dropping_point = Column(Integer, ForeignKey("landmark.id"))
+    pickup_point = Column(
+        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+    )
+    dropping_point = Column(
+        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+    )
     extra = Column(JSONB, nullable=False)
     distance = Column(Integer, nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     created_on = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
 
     __table_args__ = (UniqueConstraint("service_id", "duty_id", "sequence_id"),)
+
+
+class DigitalTicket(ORMbase):
+    __tablename__ = "digital_ticket"
+
+    id = Column(BigInteger, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey(Company.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    service_id = Column(
+        Integer,
+        ForeignKey(Service.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sequence_id = Column(Integer, nullable=False)
+    ticket_types = Column(JSONB, nullable=False)
+    pickup_point = Column(
+        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+    )
+    dropping_point = Column(
+        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+    )
+    extra = Column(JSONB, nullable=False)
+    distance = Column(Integer, nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
