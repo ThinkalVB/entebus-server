@@ -482,7 +482,6 @@ class LocalFare(ORMbase):
         ForeignKey(GlobalFare.id, ondelete="SET NULL"),
         index=True,
     )
-    version = Column(Integer, nullable=False, default=1)
     name = Column(String(32), nullable=False, unique=True)
     attributes = Column(JSONB, nullable=False)
     function = Column(TEXT, nullable=False)
@@ -610,8 +609,8 @@ class Service(ORMbase):
         index=True,
     )
     name = Column(String(128), nullable=False)
-    route = Column(JSONB, ForeignKey(Route.id, ondelete="RESTRICT"))
-    fare = Column(JSONB, ForeignKey(LocalFare.id, ondelete="RESTRICT"))
+    route = Column(Integer, ForeignKey(Route.id, ondelete="RESTRICT"))
+    fare = Column(Integer, ForeignKey(LocalFare.id, ondelete="RESTRICT"))
     bus_id = Column(Integer, ForeignKey(Bus.id, ondelete="RESTRICT"))
     ticket_mode = Column(Integer, nullable=False, default=TicketingMode.HYBRID)
     status = Column(Integer, nullable=False, default=ServiceStatus.CREATED)
@@ -622,7 +621,96 @@ class Service(ORMbase):
     remark = Column(TEXT)
     started_on = Column(DateTime(timezone=True))
     finished_on = Column(DateTime(timezone=True))
+    bus_snapshot = Column(JSONB, nullable=False)
+    route_snapshot = Column(JSONB, nullable=False)
+    fare_snapshot = Column(JSONB, nullable=False)
     created_on = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ServiceTrace(ORMbase):
+    __tablename__ = "service_trace"
+
+    id = Column(Integer, primary_key=True)
+    service_id = Column(
+        Integer,
+        ForeignKey(Service.id, ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    landmark_id = Column(
+        Integer, ForeignKey("landmark.id", ondelete="CASCADE"), nullable=False
+    )
+    location = Column(Geometry(geometry_type="POINT", srid=4326))
+    accuracy = Column(Numeric(10, 2))
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Duty(ORMbase):
+    __tablename__ = "duty"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    operator_id = Column(
+        Integer,
+        ForeignKey("operator.id", ondelete="SET NULL"),
+    )
+    service_id = Column(
+        Integer,
+        ForeignKey("service.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    passcode = Column(String(32), nullable=False)
+    status = Column(Integer, nullable=False, default=DutyStatus.ASSIGNED)
+    started_on = Column(DateTime(timezone=True))
+    finished_on = Column(DateTime(timezone=True))
+    collection = Column(Numeric(10, 2))
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class PaperTicket(ORMbase):
+    __tablename__ = "paper_ticket"
+
+    id = Column(Integer, primary_key=True)
+    company_id = Column(
+        Integer,
+        ForeignKey("company.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    service_id = Column(
+        Integer,
+        ForeignKey("service.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    duty_id = Column(
+        Integer, ForeignKey("duty.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    sequence_id = Column(Integer, nullable=False)
+    ticket_types = Column(JSONB, nullable=False)
+    pickup_point = Column(Integer, ForeignKey("landmark.id"))
+    dropping_point = Column(Integer, ForeignKey("landmark.id"))
+    extra = Column(JSONB, nullable=False)
+    distance = Column(Integer, nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_on = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (UniqueConstraint("service_id", "duty_id", "sequence_id"),)

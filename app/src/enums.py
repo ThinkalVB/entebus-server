@@ -89,13 +89,6 @@ class CompanyType(IntEnum):
     GOVERNMENT = 3
 
 
-class FareScope(IntEnum):
-    """Scope of fare applicability."""
-
-    GLOBAL = 1
-    LOCAL = 2
-
-
 class BankAccountType(IntEnum):
     """Supported types of bank accounts."""
 
@@ -147,7 +140,6 @@ class ServiceStatus(IntEnum):
     STARTED = 2
     TERMINATED = 3
     ENDED = 4
-    AUDITED = 5
 
 
 class DutyStatus(IntEnum):
