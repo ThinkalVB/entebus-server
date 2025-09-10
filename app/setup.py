@@ -1,8 +1,10 @@
 from sqlalchemy import text
 from app.src.db import ORMbase, engine
+from app.src import buckets
+from app.src import minio
 
 
-def remove_tables():
+def delete_tables():
     """Drop all tables defined in ORMbase metadata."""
     ORMbase.metadata.drop_all(engine)
     print("* All tables deleted")
@@ -47,6 +49,18 @@ def create_tables():
     print("* Triggers created")
 
 
+def create_buckets():
+    for bucket in buckets.ALL:
+        minio.create_bucket(bucket)
+
+
+def delete_buckets():
+    for bucket in buckets.ALL:
+        minio.delete_bucket(bucket)
+
+
 if __name__ == "__main__":
     create_tables()
-    remove_tables()
+    create_buckets()
+    delete_tables()
+    delete_buckets()

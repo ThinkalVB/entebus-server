@@ -796,6 +796,24 @@ class Bus(ORMbase):
     __table_args__ = (UniqueConstraint(registration_number, company_id),)
 
 
+class BusImage(ORMbase):
+    __tablename__ = "bus_image"
+
+    id = Column(Integer, primary_key=True)
+    bus_id = Column(
+        Integer,
+        ForeignKey(Bus.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    file_name = Column(String(128), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_type = Column(String(128), nullable=False)
+    created_on = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 # ---------------------------------------------------------------------------
 # Service Related Models
 # ---------------------------------------------------------------------------
