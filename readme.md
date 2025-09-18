@@ -134,21 +134,22 @@ Build, run, and push the image:
 The image is tagged using the format: `<branch-name>-<commit-id>` (for latest image you may add optional tag `<branch-name>-latest`).
 ```
 # Building the docker image
-docker build -t docker.nixbug.com/entebus/entebus-core-server:develop-052bd99 \
-    -t docker.nixbug.com/entebus/entebus-core-server:develop-latest .
+docker build -t <registry>/<namespace>/entebus-server:<branch>-<commit-id> \
+             -t <registry>/<namespace>/entebus-server:<branch>-latest .
 
 # Running the docker image
-docker run -d --name entebus-core-server -p 8080:8080 docker.nixbug.com/entebus/entebus-core-server:develop-latest
+docker run -d --name <container-name> -p <host-port>:<container-port> \
+    <registry>/<namespace>/entebus-server:<branch>-latest
 
 # Login to remote docker repository (only needed once)
-docker login docker.nixbug.com
+docker login <registry>
 
 # Push the docker image to nexus repository
-docker push docker.nixbug.com/entebus/entebus-core-server:develop-latest
-docker push docker.nixbug.com/entebus/entebus-core-server:develop-052bd99
+docker push <registry>/<namespace>/entebus-server:<branch>-latest
+docker push <registry>/<namespace>/entebus-server:<branch>-<commit-id>
 
 # Pull the docker image from nexus repository
-docker pull docker.nixbug.com/entebus/entebus-core-server:develop-latest
+docker pull <registry>/<namespace>/entebus-server:<branch>-<commit-id>
 ```
 
 ## 🤝 Contributing
