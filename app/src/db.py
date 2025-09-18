@@ -996,6 +996,9 @@ class DigitalTicket(ORMbase):
         nullable=False,
         index=True,
     )
+    duty_id = Column(
+        Integer, ForeignKey(Duty.id, ondelete="RESTRICT"), nullable=False, index=True
+    )
     sequence_id = Column(Integer, nullable=False)
     ticket_types = Column(JSONB, nullable=False)
     pickup_point = Column(
