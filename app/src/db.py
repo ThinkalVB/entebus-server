@@ -889,6 +889,12 @@ class ServiceTrace(ORMbase):
         nullable=False,
         unique=True,
     )
+    company_id = Column(
+        Integer,
+        ForeignKey(Company.id, ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     landmark_id = Column(
         Integer, ForeignKey(Landmark.id, ondelete="CASCADE"), nullable=False
     )
