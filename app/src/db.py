@@ -756,7 +756,10 @@ class LandmarkInRoute(ORMbase):
         Integer, ForeignKey(Route.id, ondelete="CASCADE"), nullable=False, index=True
     )
     landmark_id = Column(
-        Integer, ForeignKey(Landmark.id, ondelete="RESTRICT"), nullable=False
+        Integer,
+        ForeignKey(Landmark.id, ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     distance_from_start = Column(Integer, nullable=False)
     arrival_delta = Column(Integer, nullable=False)
