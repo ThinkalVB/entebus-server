@@ -10,28 +10,10 @@ This module:
 All ORM models should inherit from `ORMbase`.
 """
 
-from secrets import token_hex
-from geoalchemy2 import Geometry
 from sqlalchemy import (
-    ARRAY,
-    TEXT,
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Numeric,
-    String,
-    Time,
-    Index,
-    UniqueConstraint,
     create_engine,
-    func,
-    text,
 )
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy.dialects.postgresql import JSONB
 
 from app.src.constants import (
     PSQL_DB_DRIVER,
@@ -40,23 +22,6 @@ from app.src.constants import (
     PSQL_DB_NAME,
     PSQL_DB_PORT,
     PSQL_DB_USERNAME,
-)
-from app.src.enums import (
-    AccountStatus,
-    BankAccountType,
-    GenderType,
-    LandmarkType,
-    PlatformType,
-    BusinessStatus,
-    BusinessType,
-    CompanyStatus,
-    CompanyType,
-    BusStatus,
-    TicketingMode,
-    TriggeringMode,
-    ServiceStatus,
-    DutyStatus,
-    RouteStatus,
 )
 
 
