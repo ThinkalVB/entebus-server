@@ -2,6 +2,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
+from geoalchemy2 import alembic_helpers
 
 # import your app’s DB metadata + runtime DB URL
 from app.src.db import ORMbase, get_db_url
@@ -30,6 +31,12 @@ target_metadata = ORMbase.metadata
 # ... etc.
 
 
+def include_name(name, type_, parent_names):
+    if type_ == "schema" and name in {"public"}:
+        return True
+    return False
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -48,6 +55,10 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=alembic_helpers.include_object,
+        process_revision_directives=alembic_helpers.writer,
+        render_item=alembic_helpers.render_item,
+        include_name=include_name,
     )
 
     with context.begin_transaction():
@@ -68,7 +79,14 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=alembic_helpers.include_object,
+            process_revision_directives=alembic_helpers.writer,
+            render_item=alembic_helpers.render_item,
+            include_name=include_name,
+        )
 
         with context.begin_transaction():
             context.run_migrations()

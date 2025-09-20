@@ -27,7 +27,7 @@ The **Entebus Server** is a high-performance API server built with [FastAPI](htt
 
 ### Local Development Setup
 
-```
+```bash
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt autoremove
@@ -63,7 +63,7 @@ pip-compile --upgrade requirements.in --no-strip-extras
 
 **PostgreSQL + PostGIS**
 
-```
+```bash
 docker run --name postgis \
     -e POSTGRES_PASSWORD=password \
     -p 5432:5432 \
@@ -72,7 +72,7 @@ docker run --name postgis \
 
 **MinIO (object storage)**
 
-```
+```bash
 docker run --name minio \
     -e MINIO_ROOT_USER=minio \
     -e MINIO_ROOT_PASSWORD=password \
@@ -83,7 +83,7 @@ docker run --name minio \
 
 **OpenObserve (logs, traces, metrics)**
 
-```
+```bash
 docker run -d \
     --name openobserve \
     -p 5080:5080 \
@@ -94,32 +94,59 @@ docker run -d \
 
 **Redis DB**
 
-```
+```bash
 docker run --name redis \
     -p 6379:6379 \
     -d redis \
     redis-server --requirepass "password"
 ```
 
+
+## 🗄️ Database Setup & Management
+
+All database migrations and schema management are handled via **Alembic** and the helper script `setup.py`. This script provides commands for revising, migrating, resetting, and managing DB tables and MinIO buckets.
+
+### Usage
+
+Run the following commands from the project root:
+
+```bash
+# Create a new migration (revision) from model changes
+python -m app.setup revise "added new table"
+
+# Apply migrations (bring DB schema to latest head)
+python -m app.setup migrate
+
+# Reset the database (drop + recreate schema)
+# Note: Reinstall PostGIS extension when you do so
+python -m app.setup reset_db
+
+# Downgrade the database by one step (use -N for multiple steps)
+python -m app.setup downgrade
+python -m app.setup downgrade -2
+
+# Create all tables directly (without migrations)
+# Note: Use with caution (not for production)
+python -m app.setup create_tables
+
+# Delete all tables (without migrations)
+# Note: Use with caution (not for production)
+python -m app.setup delete_tables
+
+# Create all MinIO buckets (defined in app/src/buckets.py)
+python -m app.setup create_buckets
+
+# Delete all MinIO buckets
+python -m app.setup delete_buckets
+```
+
+
 ## 🚀 Running the Server
 
-### Initialize Database
-
-```
-# Create tables and buckets
-python3 -m app.setup -cr
-
-# Remove all tables and buckets
-python3 -m app.setup -rm
-
-# Initialize with bare minimum data
-python3 -m app.setup -init
-```
-
-### Running server
+**Starting server**
 
 The preferred server to run the FastAPI application is Uvicorn.
-```
+```bash
 # Run with Uvicorn (hot reload enabled)
 uvicorn app.main:app --port 8080 --reload
 ```
@@ -132,7 +159,7 @@ You can access the API from http://127.0.0.1:8080/docs.
 
 Build, run, and push the image:
 The image is tagged using the format: `<branch-name>-<commit-id>` (for latest image you may add optional tag `<branch-name>-latest`).
-```
+```bash
 # Building the docker image
 docker build -t <registry>/<namespace>/entebus-server:<branch>-<commit-id> \
              -t <registry>/<namespace>/entebus-server:<branch>-latest .
